@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>طَفْرَة // PROTOCOL ZERO</title>
+  <style>
+    :root {
+      --bg: #05070a;
+      --panel: #0b111c;
+      --border: #1a2638;
+      --accent: #00ff88;
+      --warn: #ff2a5f;
+      --gold: #ffb703;
+      --cyan: #00e5ff;
+      --text: #f1f5f9;
+      --muted: #52637a;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); color: var(--text); margin: 0; padding: 12px; display: flex; justify-content: center; min-height: 100vh; }
+    .app { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 10px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; position: relative; }
+    .card.p0-card { border-color: var(--gold); box-shadow: 0 0 20px rgba(255, 183, 3, 0.15); }
+    .row-between { display: flex; justify-content: space-between; align-items: center; }
+    .title { font-size: 15px; font-weight: 900; color: var(--accent); letter-spacing: 1px; }
+    .title.gold { color: var(--gold); }
+    .badge { font-size: 10px; padding: 3px 8px; border-radius: 4px; background: #000; border: 1px solid var(--border); color: var(--muted); }
+    
+    /* أزرار التحكم باللغة */
+    .lang-btn { background: #141d2b; border: 1px solid var(--border); color: var(--accent); font-size: 10px; font-weight: bold; border-radius: 4px; padding: 3px 8px; cursor: pointer; }
+    .lang-btn:active { transform: scale(0.95); }
+
+    /* شريط المناعة */
+    .bar-wrap { height: 10px; background: #000; border-radius: 5px; overflow: hidden; border: 1px solid var(--border); margin: 8px 0 4px; }
+    .bar-fill { height: 100%; width: 100%; background: linear-gradient(90deg, var(--warn), var(--accent)); transition: width 0.2s linear; }
+    
+    /* مصفوفة الألغاز الجينية */
+    .codon-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0; }
+    .codon-slot { background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 8px 2px; text-align: center; }
+    .codon-slot.active { border-color: var(--accent); background: rgba(0, 255, 136, 0.08); }
+    .codon-slot.root-active { border-color: var(--gold); background: rgba(255, 183, 3, 0.08); }
+    .codon-lbl { font-size: 8px; color: var(--muted); display: block; }
+    .codon-val { font-size: 11px; font-weight: 800; color: #fff; margin-top: 2px; }
+    
+    /* الأزرار والحقول */
+    .btn { background: var(--accent); color: #000; border: none; border-radius: 8px; padding: 12px; font-weight: 900; font-size: 13px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn:active { transform: scale(0.98); }
+    .btn-gold { background: var(--gold); color: #000; }
+    .btn-warn { background: var(--warn); color: #fff; }
+    .btn-secondary { background: #141d2b; color: var(--text); margin-top: 6px; border: 1px solid var(--border); }
+    input[type="text"] { width: 100%; background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 10px; color: var(--accent); font-size: 11px; font-weight: bold; text-align: center; margin-top: 6px; outline: none; }
+    input[type="text"]:focus { border-color: var(--accent); }
+    
+    /* شبكة الإحصائيات */
+    .stats { display: flex; justify-content: space-around; background: #000; border-radius: 8px; padding: 10px; border: 1px solid var(--border); text-align: center; }
+    .stat-num { font-size: 16px; font-weight: 900; color: var(--accent); }
+    .stat-lbl { font-size: 9px; color: var(--muted); }
+    
+    /* العارض الرسومي للمصفوفة */
+    .matrix-box { background: #000; border: 1px dashed var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center; margin: 10px 0; }
+    svg.visual-tag { width: 140px; height: 140px; }
+    
+    /* النوافذ العائمة والإشعارات */
+    .modal { position: fixed; inset: 0; background: rgba(5, 7, 10, 0.96); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 999; }
+    .toast { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); background: #0b111c; border: 1px solid var(--accent); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; z-index: 1000; display: none; text-align: center; max-width: 90%; }
+  </style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<div class="app">
+  
+  <!-- اللوحة العلوية -->
+  <div class="card" id="card-header">
+    <div class="row-between">
+      <span class="title" id="ui-main-title">☣ طَفْرَة // الإصدار الحصين</span>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button class="lang-btn" onclick="toggleLanguage()" id="ui-lang-toggle">English</button>
+        <span class="badge" id="ui-node-badge">NODE: ---</span>
+      </div>
+    </div>
+    
+    <div class="row-between" style="margin-top: 10px; font-size: 11px; font-weight: bold;">
+      <span id="txt-immunity-label">المناعة الحيوية</span>
+      <span id="ui-immunity">100%</span>
+    </div>
+    <div class="bar-wrap">
+      <div class="bar-fill" id="ui-bar"></div>
+    </div>
+  </div>
+
+  <!-- مصفوفة الألغاز وسجل الأنساب -->
+  <div class="card" id="card-matrix">
+    <div class="row-between">
+      <span style="font-size: 11px; font-weight: bold; color: var(--muted);" id="txt-matrix-title">المصفوفة الجينية (الأصل + 3 أحلاف)</span>
+      <span class="badge" id="ui-rank" style="color:var(--accent)">المريض صفر</span>
+    </div>
+
+    <div class="codon-grid">
+      <div class="codon-slot active" id="slot-0">
+        <span class="codon-lbl" id="txt-slot-0">حمضك</span>
+        <div class="codon-val" id="ui-codon-0">---</div>
+      </div>
+      <div class="codon-slot" id="slot-1">
+        <span class="codon-lbl" id="txt-slot-1">حليف 1</span>
+        <div class="codon-val" id="ui-codon-1">LOCKED</div>
+      </div>
+      <div class="codon-slot" id="slot-2">
+        <span class="codon-lbl" id="txt-slot-2">حليف 2</span>
+        <div class="codon-val" id="ui-codon-2">LOCKED</div>
+      </div>
+      <div class="codon-slot" id="slot-3">
+        <span class="codon-lbl" id="txt-slot-3">حليف 3</span>
+        <div class="codon-val" id="ui-codon-3">LOCKED</div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div>
+        <div class="stat-num" id="ui-network-size">1</div>
+        <div class="stat-lbl" id="txt-stat-network">إجمالي السلالة التراكمية</div>
+      </div>
+      <div>
+        <div class="stat-num" id="ui-ancestors-depth">G-0</div>
+        <div class="stat-lbl" id="txt-stat-depth">عمق التفرع الوراثي</div>
+      </div>
+      <div>
+        <div class="stat-num" id="ui-status-text" style="color:var(--accent);">حيوي مستقر</div>
+        <div class="stat-lbl" id="txt-stat-status">الحالة الفسيولوجية</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- تمرير العدوى -->
+  <div class="card">
+    <span style="font-size: 11px; font-weight: bold;" id="txt-share-header">كبسولة التبادل والمصافحة المزدوجة</span>
+    <p style="font-size: 10px; color: var(--muted); margin: 4px 0 8px;" id="txt-share-desc">توليد توقيع مشفر يحمل سلسلة نسبك لإرساله للأجهزة المجاورة:</p>
+    
+    <div class="matrix-box">
+      <div id="svg-matrix-container"></div>
+      <span style="font-size: 9px; color: var(--muted); margin-top: 4px;" id="txt-matrix-desc">المصفوفة البصرية المحلية (تعمل بدون إنترنت)</span>
+    </div>
+
+    <button class="btn" id="btn-share" onclick="handleOutbreakShare()">⚡ تمرير العدوى (WhatsApp / المراسلة)</button>
+    <button class="btn btn-secondary" id="btn-copy-token" onclick="copyTokenToClipboard()">📋 نسخ الشفرة المشفرة نصياً</button>
+  </div>
+
+  <!-- استقبال الشفرات -->
+  <div class="card">
+    <span style="font-size: 11px; font-weight: bold;" id="txt-inject-header">حقن شفرة قادمة (تثبيت الحلفاء أو الإنعاش)</span>
+    <input type="text" id="input-token" placeholder="ألصق كبسولة الحليف المشفرة هنا...">
+    <button class="btn btn-secondary" id="btn-inject-action" onclick="handleManualInjection()">امتصاص وتوثيق الشفرة</button>
+    <button class="btn btn-secondary" id="btn-reset-action" style="color:var(--warn); border-color: rgba(255,42,95,0.3);" onclick="confirmHardReset()">⚠️ تصفير محلي وإعادة البناء</button>
+  </div>
+
+</div>
+
+<!-- نافذة الموت السريري -->
+<div class="modal" id="death-modal">
+  <div class="card" style="border-color: var(--warn); max-width: 340px; text-align: center;">
+    <h2 style="color: var(--warn); margin: 0 0 6px; font-size: 18px;" id="txt-death-title">☣ فناء حيوي (المناعة = 0%) ☣</h2>
+    <p style="font-size: 11px; line-height: 1.5; color: #94a3b8; margin-bottom: 12px;" id="txt-death-desc">
+      تجمدت سلالتك وفقدت الأحماض غير المحمية. لن تعود للعمل إلا بصدمة إنعاش من حليف جديد يتصل بشبكتك.
+    </p>
+    <button class="btn btn-warn" id="btn-revive-call" onclick="handleOutbreakShare()">⚡ إرسال نداء إنعاش لحليف جديد</button>
+    <button class="btn btn-secondary" id="btn-reset-dead" onclick="executeHardReset()">البدء من جديد كناقل مستقل</button>
+  </div>
+</div>
+
+<!-- نافذة النصر المطلق -->
+<div class="modal" id="victory-modal">
+  <div class="card" style="border-color: var(--gold); max-width: 340px; text-align: center;">
+    <h2 style="color: var(--gold); margin: 0 0 6px; font-size: 18px;" id="txt-victory-title">★ تم تخليق الترياق الكامل ★</h2>
+    <p style="font-size: 11px; line-height: 1.5; color: #cbd5e1; margin-bottom: 12px;" id="txt-victory-desc">
+      اكتملت الأحماض الأربعة! بلغت سلالتك المناعة المطلقة (100%) وأصبحت شبكتك محمية إلى الأبد من الموت الرقمي.
+    </p>
+    <button class="btn btn-gold" id="btn-victory-close" onclick="document.getElementById('victory-modal').style.display='none'">العودة لقيادة الشبكة</button>
+  </div>
+</div>
+
+<script>
+  /* ==========================================================================
+     قاموس اللغات المدمج (Offline Multi-Language Dictionary)
+     ========================================================================== */
+
+  const I18N = {
+    ar: {
+      dir: "rtl",
+      toggleLabel: "English",
+      mainTitle: "☣ طَفْرَة // الإصدار الحصين",
+      mainTitleP0: "👑 طَفْرَة // المريض صفر الحصري",
+      immunityLabel: "المناعة الحيوية",
+      matrixTitle: "المصفوفة الجينية (الأصل + 3 أحلاف)",
+      rankP0: "المريض صفر (الأصل)",
+      rankSub: "ناقل فرعي",
+      slot0: "حمضك",
+      slotAlly: "حليف",
+      statNetwork: "إجمالي السلالة التراكمية",
+      statDepth: "عمق التفرع الوراثي",
+      statStatus: "الحالة الفسيولوجية",
+      statusAlive: "حيوي مستقر",
+      statusDead: "فناء سريري",
+      statusVictorious: "خالد (محصن)",
+      shareHeader: "كبسولة التبادل والمصافحة المزدوجة",
+      shareDesc: "توليد توقيع مشفر يحمل سلسلة نسبك لإرساله للأجهزة المجاورة:",
+      matrixDesc: "المصفوفة البصرية المحلية (تعمل بدون إنترنت)",
+      btnShare: "⚡ تمرير العدوى (WhatsApp / المراسلة)",
+      btnCopy: "📋 نسخ الشفرة المشفرة نصياً",
+      injectHeader: "حقن شفرة قادمة (تثبيت الحلفاء أو الإنعاش)",
+      injectPlaceholder: "ألصق كبسولة الحليف المشفرة هنا...",
+      btnInject: "امتصاص وتوثيق الشفرة",
+      btnReset: "⚠️ تصفير محلي وإعادة البناء",
+      deathTitle: "☣ فناء حيوي (المناعة = 0%) ☣",
+      deathDesc: "تجمدت سلالتك وفقدت الأحماض غير المحمية. لن تعود للعمل إلا بصدمة إنعاش من حليف جديد يتصل بشبكتك.",
+      btnRevive: "⚡ إرسال نداء إنعاش لحليف جديد",
+      btnResetDead: "البدء من جديد كناقل مستقل",
+      victoryTitle: "★ تم تخليق الترياق الكامل ★",
+      victoryDesc: "اكتملت الأحماض الأربعة! بلغت سلالتك المناعة المطلقة (100%) وأصبحت شبكتك محمية إلى الأبد من الموت الرقمي.",
+      btnVictoryClose: "العودة لقيادة الشبكة",
+      promptCopy: "انسخ الشفرة المشفرة يدوياً:",
+      toastCopied: "تم نسخ الكبسولة المشفرة بنجاح!",
+      toastEmpty: "يرجى إدخال الشفرة!",
+      toastFormatErr: "⚠️ صياغة الكبسولة غير مطابقة للمعيار!",
+      toastTamper: "⚠️ تحذير أمني: الشفرة فاسدة أو تم التلاعب بها!",
+      toastSelf: "لا يمكنك امتصاص شفرتك الذاتية!",
+      toastReviveSuccess: "⚡ صدمة إنعاش ناجحة! تم استرداد نبضك وعودتك للعبة.",
+      toastNetworkUpdated: "تم توثيق الاتصال بالشبكة وتوسيع شجرة السلالة!",
+      toastMatrixFull: "مصفوفتك مكتملة السعة بالفعل!",
+      toastAbsorbed: "☣ تم امتصاص الشفرة بنجاح!",
+      shareP0Msg: "👑 [مرسوم المريض صفر]: خذ حمضي الجيني لحماية مناعتك، وأعد لي شفرتك بضغطة زر:",
+      shareNormalMsg: "☣ [تحالف حيوي]: خذ حمضي الجيني لحماية مناعتك، وأعد لي شفرتك بضغطة زر:",
+      shareDeadMsg: "🚨 نداء استغاثة فوري: سلالتي تلاشت ومناعتي 0%! اضغط لإنعاشي وامتصاص شفرتي:"
+    },
+    en: {
+      dir: "ltr",
+      toggleLabel: "العربية",
+      mainTitle: "☣ OUTBREAK // Protocol Zero",
+      mainTitleP0: "👑 OUTBREAK // Patient Zero Master",
+      immunityLabel: "Cellular Immunity",
+      matrixTitle: "Gene Matrix (Root + 3 Allies)",
+      rankP0: "Patient Zero (Root)",
+      rankSub: "Vector Node",
+      slot0: "Your Codon",
+      slotAlly: "Ally",
+      statNetwork: "Total Network Lineage",
+      statDepth: "Genetic Branch Depth",
+      statStatus: "Physiological Status",
+      statusAlive: "Active / Stable",
+      statusDead: "Clinical Extinction",
+      statusVictorious: "Immortal (Cured)",
+      shareHeader: "Dual Handshake Capsule",
+      shareDesc: "Generate signed token containing your full lineage chain:",
+      matrixDesc: "Offline Visual Matrix (No Internet Required)",
+      btnShare: "⚡ Spread Strain (WhatsApp / Share API)",
+      btnCopy: "📋 Copy Encrypted Capsule Token",
+      injectHeader: "Inject Incoming Capsule (Ally or CPR)",
+      injectPlaceholder: "Paste ally's signed token here...",
+      btnInject: "Absorb & Verify Capsule",
+      btnReset: "⚠️ Hard Reset & Reseed",
+      deathTitle: "☣ SYSTEM COLLAPSE (Immunity 0%) ☣",
+      deathDesc: "Your node has collapsed. Unbound codons lost. You can only be revived via an external CPR spark from a new ally.",
+      btnRevive: "⚡ Broadcast Urgent Revival SOS",
+      btnResetDead: "Reboot as Independent Vector",
+      victoryTitle: "★ PANACEA PROTOCOL COMPLETE ★",
+      victoryDesc: "All 4 codons sequenced! Absolute immunity unlocked (100%). Your network is now permanently shielded from entropy.",
+      btnVictoryClose: "Return to Command Console",
+      promptCopy: "Copy encrypted token manually:",
+      toastCopied: "Encrypted capsule copied to clipboard!",
+      toastEmpty: "Please enter a valid token!",
+      toastFormatErr: "⚠️ Token syntax mismatch!",
+      toastTamper: "⚠️ Security Alert: Signature forgery detected!",
+      toastSelf: "You cannot absorb your own genetic strain!",
+      toastReviveSuccess: "⚡ CPR Resuscitation successful! Node vitalized.",
+      toastNetworkUpdated: "Network handshake logged; lineage expanded!",
+      toastMatrixFull: "Your codon buffer is already saturated!",
+      toastAbsorbed: "☣ Genetic strain absorbed successfully!",
+      shareP0Msg: "👑 [Patient Zero Decree]: Absorb my root codon to shield your immunity, then echo yours back:",
+      shareNormalMsg: "☣ [Bio-Alliance]: Absorb my codon to restore your immunity, then echo yours back:",
+      shareDeadMsg: "🚨 CRITICAL SOS: My node collapsed (0% immunity)! Tap to revive me and link genomes:"
+    }
+  };
+
+  /* ==========================================================================
+     نواة التشفير والأمان الرياضي المستقلة
+     ========================================================================== */
+
+  const GENESIS_CONFIG = {
+    GENESIS_ID: "P0_PATIENT_ZERO_MASTER",
+    GENESIS_SECRET_SALT: "OUTBREAK_GENESIS_CORE_ANCHOR_2026_SECURE",
+    DECAY_PER_SEC: 0.20,
+    REVIVE_BONUS: 50.0,
+    MAX_ALLIES: 3
+  };
+
+  function generateSecureSignature(payload) {
+    const input = payload + GENESIS_CONFIG.GENESIS_SECRET_SALT;
+    let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for (let i = 0; i < input.length; i++) {
+      const ch = input.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+    h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+    h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).toUpperCase();
+  }
+
+  const SecureStorage = {
+    get() {
+      try {
+        const raw = localStorage.getItem('outbreak_secure_v3');
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        const expectedChecksum = generateSecureSignature(JSON.stringify(parsed.state));
+        if (parsed.checksum !== expectedChecksum) return null;
+        return parsed.state;
+      } catch(e) { return null; }
+    },
+    set(stateObj) {
+      try {
+        const checksum = generateSecureSignature(JSON.stringify(stateObj));
+        localStorage.setItem('outbreak_secure_v3', JSON.stringify({ state: stateObj, checksum: checksum }));
+      } catch(e) {}
+    },
+    clear() {
+      try { localStorage.removeItem('outbreak_secure_v3'); } catch(e) {}
+    }
+  };
+
+  let state = null;
+  let currentLang = "ar";
+
+  function t(key) {
+    return I18N[currentLang][key] || key;
+  }
+
+  function toggleLanguage() {
+    currentLang = currentLang === "ar" ? "en" : "ar";
+    state.lang = currentLang;
+    SecureStorage.set(state);
+    applyLanguageTheme();
+    renderApp();
+  }
+
+  function applyLanguageTheme() {
+    const langObj = I18N[currentLang];
+    document.documentElement.lang = currentLang;
+    document.documentElement.dir = langObj.dir;
+
+    document.getElementById('ui-lang-toggle').innerText = langObj.toggleLabel;
+    document.getElementById('txt-immunity-label').innerText = langObj.immunityLabel;
+    document.getElementById('txt-matrix-title').innerText = langObj.matrixTitle;
+    document.getElementById('txt-slot-0').innerText = langObj.slot0;
+    document.getElementById('txt-slot-1').innerText = `${langObj.slotAlly} 1`;
+    document.getElementById('txt-slot-2').innerText = `${langObj.slotAlly} 2`;
+    document.getElementById('txt-slot-3').innerText = `${langObj.slotAlly} 3`;
+    document.getElementById('txt-stat-network').innerText = langObj.statNetwork;
+    document.getElementById('txt-stat-depth').innerText = langObj.statDepth;
+    document.getElementById('txt-stat-status').innerText = langObj.statStatus;
+    document.getElementById('txt-share-header').innerText = langObj.shareHeader;
+    document.getElementById('txt-share-desc').innerText = langObj.shareDesc;
+    document.getElementById('txt-matrix-desc').innerText = langObj.matrixDesc;
+    document.getElementById('btn-share').innerText = langObj.btnShare;
+    document.getElementById('btn-copy-token').innerText = langObj.btnCopy;
+    document.getElementById('txt-inject-header').innerText = langObj.injectHeader;
+    document.getElementById('input-token').placeholder = langObj.injectPlaceholder;
+    document.getElementById('btn-inject-action').innerText = langObj.btnInject;
+    document.getElementById('btn-reset-action').innerText = langObj.btnReset;
+    document.getElementById('txt-death-title').innerText = langObj.deathTitle;
+    document.getElementById('txt-death-desc').innerText = langObj.deathDesc;
+    document.getElementById('btn-revive-call').innerText = langObj.btnRevive;
+    document.getElementById('btn-reset-dead').innerText = langObj.btnResetDead;
+    document.getElementById('txt-victory-title').innerText = langObj.victoryTitle;
+    document.getElementById('txt-victory-desc').innerText = langObj.victoryDesc;
+    document.getElementById('btn-victory-close').innerText = langObj.btnVictoryClose;
+  }
+
+  function initOutbreakEngine() {
+    state = SecureStorage.get();
+    const urlParams = new URLSearchParams(window.location.search);
+    const isGenesisBoot = urlParams.get('mode') === 'genesis';
+
+    // فحص لغة المتصفح في حال كان تشغيل جديد
+    const browserLang = (navigator.language || "").toLowerCase().startsWith("ar") ? "ar" : "en";
+
+    if (!state) {
+      if (isGenesisBoot) {
+        state = {
+          id: GENESIS_CONFIG.GENESIS_ID,
+          codon: "GENESIS-001",
+          isPatientZero: true,
+          generation: 0,
+          lineage: [GENESIS_CONFIG.GENESIS_ID],
+          immunity: 100.0,
+          allies: [],
+          knownNetworkNodes: [GENESIS_CONFIG.GENESIS_ID],
+          isVictorious: false,
+          lang: "ar",
+          lastActive: Date.now()
+        };
+      } else {
+        const randId = "NX-" + Math.floor(1000 + Math.random() * 9000);
+        const randCodon = "CD-" + Math.floor(100 + Math.random() * 900);
+        state = {
+          id: randId,
+          codon: randCodon,
+          isPatientZero: false,
+          generation: 1,
+          lineage: [randId],
+          immunity: 100.0,
+          allies: [],
+          knownNetworkNodes: [randId],
+          isVictorious: false,
+          lang: browserLang,
+          lastActive: Date.now()
+        };
+      }
+      SecureStorage.set(state);
+    }
+
+    currentLang = state.lang || "ar";
+    applyLanguageTheme();
+    syncDeltaTime();
+    processIncomingUrlParams(urlParams);
+    renderApp();
+    setupPhysicsEngine();
+  }
+
+  function syncDeltaTime() {
+    const now = Date.now();
+    const dt = (now - state.lastActive) / 1000;
+    state.lastActive = now;
+
+    if (dt > 0 && !state.isVictorious) {
+      const decay = dt * GENESIS_CONFIG.DECAY_PER_SEC;
+      state.immunity = Math.max(0, state.immunity - decay);
+      if (state.immunity <= 0) {
+        state.immunity = 0;
+        state.allies = [];
+        document.getElementById('death-modal').style.display = 'flex';
+      }
+      SecureStorage.set(state);
+    }
+  }
+
+  function ingestStrainPayload(payloadObj) {
+    const { senderId, codon, gen, lineageTree, sig } = payloadObj;
+    const payloadStr = `${senderId}:${codon}:${gen}:${lineageTree.join(',')}`;
+    const expectedSig = generateSecureSignature(payloadStr);
+
+    if (sig !== expectedSig) return { success: false, msg: t("toastTamper") };
+    if (senderId === state.id) return { success: false, msg: t("toastSelf") };
+
+    lineageTree.forEach(node => {
+      if (!state.knownNetworkNodes.includes(node)) state.knownNetworkNodes.push(node);
+    });
+
+    if (state.immunity <= 0) {
+      state.immunity = GENESIS_CONFIG.REVIVE_BONUS;
+      state.allies = [codon];
+      document.getElementById('death-modal').style.display = 'none';
+      SecureStorage.set(state);
+      renderApp();
+      return { success: true, msg: t("toastReviveSuccess") };
+    }
+
+    if (state.allies.includes(codon) || state.codon === codon) {
+      SecureStorage.set(state);
+      renderApp();
+      return { success: true, msg: t("toastNetworkUpdated") };
+    }
+
+    if (state.allies.length >= GENESIS_CONFIG.MAX_ALLIES) {
+      SecureStorage.set(state);
+      renderApp();
+      return { success: false, msg: t("toastMatrixFull") };
+    }
+
+    state.allies.push(codon);
+    state.immunity = Math.min(100.0, state.immunity + 30.0);
+    if (!state.lineage.includes(senderId)) state.lineage.push(senderId);
+
+    if (state.allies.length === GENESIS_CONFIG.MAX_ALLIES) {
+      state.isVictorious = true;
+      state.immunity = 100.0;
+      document.getElementById('victory-modal').style.display = 'flex';
+    }
+
+    SecureStorage.set(state);
+    renderApp();
+    return { success: true, msg: `${t("toastAbsorbed")} [${codon}]` };
+  }
+
+  function createOutbreakPackage() {
+    const payloadStr = `${state.id}:${state.codon}:${state.generation}:${state.lineage.join(',')}`;
+    const sig = generateSecureSignature(payloadStr);
+    const origin = window.location.origin + window.location.pathname;
+    const shareUrl = `${origin}?id=${state.id}&c=${state.codon}&g=${state.generation}&tree=${encodeURIComponent(state.lineage.join(','))}&s=${sig}`;
+    const rawToken = `${state.id}#${state.codon}#${state.generation}#${state.lineage.join(',')}#${sig}`;
+    return { shareUrl, rawToken, sig };
+  }
+
+  function drawSelfContainedVisualMatrix(seedStr) {
+    let hash = 0;
+    for (let i = 0; i < seedStr.length; i++) hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
+    
+    let svg = `<svg class="visual-tag" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">`;
+    svg += `<rect width="10" height="10" fill="#000" />`;
+    svg += `<rect x="1" y="1" width="3" height="3" fill="#00ff88" />`;
+    svg += `<rect x="6" y="1" width="3" height="3" fill="#00ff88" />`;
+    svg += `<rect x="1" y="6" width="3" height="3" fill="#00ff88" />`;
+    svg += `<rect x="2" y="2" width="1" height="1" fill="#000" />`;
+    svg += `<rect x="7" y="2" width="1" height="1" fill="#000" />`;
+    svg += `<rect x="2" y="7" width="1" height="1" fill="#000" />`;
+
+    for (let x = 0; x < 10; x++) {
+      for (let y = 0; y < 10; y++) {
+        if ((x < 5 && y < 5) || (x > 5 && y < 5) || (x < 5 && y > 5)) continue;
+        if (((hash >> ((x * 10 + y) % 31)) & 1) === 1) {
+          svg += `<rect x="${x}" y="${y}" width="1" height="1" fill="#00e5ff" opacity="0.9" />`;
+        }
+      }
+    }
+    svg += `</svg>`;
+    document.getElementById('svg-matrix-container').innerHTML = svg;
+  }
+
+  function handleOutbreakShare() {
+    const pkg = createOutbreakPackage();
+    let text = "";
+    if (state.immunity <= 0) {
+      text = `${t("shareDeadMsg")}\n${pkg.shareUrl}`;
+    } else {
+      text = `${state.isPatientZero ? t("shareP0Msg") : t("shareNormalMsg")} [${state.codon}]\n${pkg.shareUrl}`;
+    }
+
+    if (navigator.share) {
+      navigator.share({ title: "OUTBREAK // PROTOCOL ZERO", text: text, url: pkg.shareUrl })
+        .catch(err => { if (err.name !== 'AbortError') copyFallback(pkg.rawToken); });
+    } else {
+      copyFallback(pkg.rawToken);
+    }
+  }
+
+  function copyTokenToClipboard() {
+    const pkg = createOutbreakPackage();
+    copyFallback(pkg.rawToken);
+  }
+
+  function copyFallback(str) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(str).then(() => showToast(t("toastCopied")));
+    } else {
+      prompt(t("promptCopy"), str);
+    }
+  }
+
+  function handleManualInjection() {
+    const input = document.getElementById('input-token').value.trim();
+    if (!input) return showToast(t("toastEmpty"));
+    const parts = input.split('#');
+    if (parts.length === 5) {
+      const payload = {
+        senderId: parts[0],
+        codon: parts[1],
+        gen: parts[2],
+        lineageTree: parts[3].split(','),
+        sig: parts[4]
+      };
+      const res = ingestStrainPayload(payload);
+      showToast(res.msg);
+      if (res.success) document.getElementById('input-token').value = "";
+    } else {
+      showToast(t("toastFormatErr"));
+    }
+  }
+
+  function processIncomingUrlParams(p) {
+    const senderId = p.get('id');
+    const codon = p.get('c');
+    const gen = p.get('g');
+    const tree = p.get('tree');
+    const sig = p.get('s');
+
+    if (senderId && codon && tree && sig) {
+      const payload = {
+        senderId: senderId,
+        codon: codon,
+        gen: gen || "1",
+        lineageTree: decodeURIComponent(tree).split(','),
+        sig: sig
+      };
+      const res = ingestStrainPayload(payload);
+      showToast(res.msg);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }
+
+  function setupPhysicsEngine() {
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        syncDeltaTime();
+        renderApp();
+      }
+    });
+
+    setInterval(() => {
+      syncDeltaTime();
+      renderOnlyMeters();
+    }, 1000);
+  }
+
+  function renderOnlyMeters() {
+    document.getElementById('ui-immunity').innerText = Math.floor(state.immunity) + "%";
+    document.getElementById('ui-bar').style.width = state.immunity + "%";
+  }
+
+  function renderApp() {
+    const isP0 = state.isPatientZero;
+    const titleEl = document.getElementById('ui-main-title');
+    const rankEl = document.getElementById('ui-rank');
+    
+    if (isP0) {
+      document.getElementById('card-header').classList.add('p0-card');
+      titleEl.classList.add('gold');
+      titleEl.innerText = t("mainTitleP0");
+      rankEl.innerText = t("rankP0");
+      rankEl.style.color = "var(--gold)";
+      document.getElementById('slot-0').classList.add('root-active');
+      document.getElementById('btn-share').classList.add('btn-gold');
+    } else {
+      titleEl.innerText = t("mainTitle");
+      rankEl.innerText = t("rankSub");
+    }
+
+    document.getElementById('ui-node-badge').innerText = "NODE: " + state.id;
+    document.getElementById('ui-codon-0').innerText = state.codon;
+    document.getElementById('ui-network-size').innerText = state.knownNetworkNodes.length;
+    document.getElementById('ui-ancestors-depth').innerText = "G-" + state.generation;
+
+    renderOnlyMeters();
+
+    const statusEl = document.getElementById('ui-status-text');
+    if (state.isVictorious) {
+      statusEl.innerText = t("statusVictorious");
+      statusEl.style.color = "var(--gold)";
+    } else if (state.immunity <= 0) {
+      statusEl.innerText = t("statusDead");
+      statusEl.style.color = "var(--warn)";
+    } else {
+      statusEl.innerText = t("statusAlive");
+      statusEl.style.color = isP0 ? "var(--gold)" : "var(--accent)";
+    }
+
+    for (let i = 0; i < GENESIS_CONFIG.MAX_ALLIES; i++) {
+      const slot = document.getElementById(`slot-${i+1}`);
+      const val = document.getElementById(`ui-codon-${i+1}`);
+      if (state.allies[i]) {
+        slot.classList.add('active');
+        val.innerText = state.allies[i];
+      } else {
+        slot.classList.remove('active');
+        val.innerText = "LOCKED";
+      }
+    }
+
+    const pkg = createOutbreakPackage();
+    drawSelfContainedVisualMatrix(pkg.sig);
+  }
+
+  function confirmHardReset() {
+    if (confirm(currentLang === 'ar' ? "هل تريد تصفير العقدة محلياً والبدء من جديد؟" : "Confirm resetting your node back to zero?")) {
+      executeHardReset();
+    }
+  }
+
+  function executeHardReset() {
+    SecureStorage.clear();
+    window.location.href = window.location.pathname;
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.innerText = msg;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 3500);
+  }
+
+  window.onload = initOutbreakEngine;
+</script>
+</body>
+</html>
