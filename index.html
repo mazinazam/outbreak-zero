@@ -21,20 +21,18 @@
     .app { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 10px; }
     .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; position: relative; }
     .card.p0-card { border-color: var(--gold); box-shadow: 0 0 20px rgba(255, 183, 3, 0.15); }
+    .god-card { border-color: var(--gold) !important; background: rgba(255, 183, 3, 0.03); display: none; }
     .row-between { display: flex; justify-content: space-between; align-items: center; }
     .title { font-size: 15px; font-weight: 900; color: var(--accent); letter-spacing: 1px; }
     .title.gold { color: var(--gold); }
     .badge { font-size: 10px; padding: 3px 8px; border-radius: 4px; background: #000; border: 1px solid var(--border); color: var(--muted); }
     
-    /* أزرار التحكم باللغة */
     .lang-btn { background: #141d2b; border: 1px solid var(--border); color: var(--accent); font-size: 10px; font-weight: bold; border-radius: 4px; padding: 3px 8px; cursor: pointer; }
     .lang-btn:active { transform: scale(0.95); }
 
-    /* شريط المناعة */
     .bar-wrap { height: 10px; background: #000; border-radius: 5px; overflow: hidden; border: 1px solid var(--border); margin: 8px 0 4px; }
     .bar-fill { height: 100%; width: 100%; background: linear-gradient(90deg, var(--warn), var(--accent)); transition: width 0.2s linear; }
     
-    /* مصفوفة الألغاز الجينية */
     .codon-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0; }
     .codon-slot { background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 8px 2px; text-align: center; }
     .codon-slot.active { border-color: var(--accent); background: rgba(0, 255, 136, 0.08); }
@@ -42,25 +40,26 @@
     .codon-lbl { font-size: 8px; color: var(--muted); display: block; }
     .codon-val { font-size: 11px; font-weight: 800; color: #fff; margin-top: 2px; }
     
-    /* الأزرار والحقول */
     .btn { background: var(--accent); color: #000; border: none; border-radius: 8px; padding: 12px; font-weight: 900; font-size: 13px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
     .btn:active { transform: scale(0.98); }
     .btn-gold { background: var(--gold); color: #000; }
     .btn-warn { background: var(--warn); color: #fff; }
     .btn-secondary { background: #141d2b; color: var(--text); margin-top: 6px; border: 1px solid var(--border); }
+    
+    .god-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+    .btn-god { background: #12181f; border: 1px solid var(--gold); color: var(--gold); font-size: 11px; padding: 10px 4px; border-radius: 6px; font-weight: bold; cursor: pointer; text-align: center; }
+    .btn-god:active { background: var(--gold); color: #000; }
+
     input[type="text"] { width: 100%; background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 10px; color: var(--accent); font-size: 11px; font-weight: bold; text-align: center; margin-top: 6px; outline: none; }
     input[type="text"]:focus { border-color: var(--accent); }
     
-    /* شبكة الإحصائيات */
     .stats { display: flex; justify-content: space-around; background: #000; border-radius: 8px; padding: 10px; border: 1px solid var(--border); text-align: center; }
     .stat-num { font-size: 16px; font-weight: 900; color: var(--accent); }
     .stat-lbl { font-size: 9px; color: var(--muted); }
     
-    /* العارض الرسومي للمصفوفة */
     .matrix-box { background: #000; border: 1px dashed var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center; margin: 10px 0; }
     svg.visual-tag { width: 140px; height: 140px; }
     
-    /* النوافذ العائمة والإشعارات */
     .modal { position: fixed; inset: 0; background: rgba(5, 7, 10, 0.96); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 999; }
     .toast { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); background: #0b111c; border: 1px solid var(--accent); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; z-index: 1000; display: none; text-align: center; max-width: 90%; }
   </style>
@@ -132,6 +131,22 @@
     </div>
   </div>
 
+  <!-- لوحة المعماري السيادية (تظهر حصرياً للمريض صفر فقط) -->
+  <div class="card god-card" id="god-console">
+    <div class="row-between">
+      <span style="font-size: 12px; font-weight: 900; color: var(--gold);" id="txt-god-title">👑 لوحة المعماري // نمط الإدارة السيادي</span>
+      <span class="badge" style="border-color:var(--gold); color:var(--gold);">ROOT GOD</span>
+    </div>
+    <p style="font-size: 10px; color: var(--muted); margin: 4px 0 6px;" id="txt-god-desc">أنت الأصل غير الخاضع للفناء. تحكّم في توازن السلالة واختبر النظام بضغطة زر:</p>
+    
+    <div class="god-grid">
+      <button class="btn-god" onclick="godMintCodon()" id="btn-god-mint">🧪 تخليق وحقن حمض تلقائياً</button>
+      <button class="btn-god" onclick="godSimulateNode()" id="btn-god-sim">🌐 محاكاة تفرع ناقل جديد (+1)</button>
+      <button class="btn-god" onclick="godRefillImmunity()" id="btn-god-refill">⚡ تثبيت الخلود (100% Lock)</button>
+      <button class="btn-god" onclick="godClearAllies()" id="btn-god-clear" style="border-color:var(--warn); color:var(--warn);">🔄 تصفير الأحماض للاختبار</button>
+    </div>
+  </div>
+
   <!-- تمرير العدوى -->
   <div class="card">
     <span style="font-size: 11px; font-weight: bold;" id="txt-share-header">كبسولة التبادل والمصافحة المزدوجة</span>
@@ -163,6 +178,7 @@
     <p style="font-size: 11px; line-height: 1.5; color: #94a3b8; margin-bottom: 12px;" id="txt-death-desc">
       تجمدت سلالتك وفقدت الأحماض غير المحمية. لن تعود للعمل إلا بصدمة إنعاش من حليف جديد يتصل بشبكتك.
     </p>
+    <button class="btn btn-gold" id="btn-god-bypass" onclick="godBypassDeath()" style="display:none; margin-bottom: 6px;">👑 تجاوز الحجر الصحي فوراً (المعماري)</button>
     <button class="btn btn-warn" id="btn-revive-call" onclick="handleOutbreakShare()">⚡ إرسال نداء إنعاش لحليف جديد</button>
     <button class="btn btn-secondary" id="btn-reset-dead" onclick="executeHardReset()">البدء من جديد كناقل مستقل</button>
   </div>
@@ -181,7 +197,7 @@
 
 <script>
   /* ==========================================================================
-     قاموس اللغات المدمج (Offline Multi-Language Dictionary)
+     قاموس اللغات المحدث (مع مفاتيح لوحة المعماري)
      ========================================================================== */
 
   const I18N = {
@@ -189,10 +205,10 @@
       dir: "rtl",
       toggleLabel: "English",
       mainTitle: "☣ طَفْرَة // الإصدار الحصين",
-      mainTitleP0: "👑 طَفْرَة // المريض صفر الحصري",
+      mainTitleP0: "👑 طَفْرَة // المريض صفر (المعماري)",
       immunityLabel: "المناعة الحيوية",
       matrixTitle: "المصفوفة الجينية (الأصل + 3 أحلاف)",
-      rankP0: "المريض صفر (الأصل)",
+      rankP0: "المريض صفر (الأصل الحصري)",
       rankSub: "ناقل فرعي",
       slot0: "حمضك",
       slotAlly: "حليف",
@@ -202,6 +218,13 @@
       statusAlive: "حيوي مستقر",
       statusDead: "فناء سريري",
       statusVictorious: "خالد (محصن)",
+      godTitle: "👑 لوحة المعماري // نمط الإدارة السيادي",
+      godDesc: "أنت أصل الوباء ومحصن من الفناء. يمكنك التحكم في توازن اللعبة واختبار السلالة:",
+      godMint: "🧪 تخليق وحقن حمض تلقائياً",
+      godSim: "🌐 محاكاة تفرع ناقل جديد (+1)",
+      godRefill: "⚡ تثبيت الخلود (100% Lock)",
+      godClear: "🔄 تصفير الأحماض للاختبار",
+      godBypass: "👑 تجاوز الحجر الصحي فوراً (المعماري)",
       shareHeader: "كبسولة التبادل والمصافحة المزدوجة",
       shareDesc: "توليد توقيع مشفر يحمل سلسلة نسبك لإرساله للأجهزة المجاورة:",
       matrixDesc: "المصفوفة البصرية المحلية (تعمل بدون إنترنت)",
@@ -236,10 +259,10 @@
       dir: "ltr",
       toggleLabel: "العربية",
       mainTitle: "☣ OUTBREAK // Protocol Zero",
-      mainTitleP0: "👑 OUTBREAK // Patient Zero Master",
+      mainTitleP0: "👑 OUTBREAK // Patient Zero (Architect)",
       immunityLabel: "Cellular Immunity",
       matrixTitle: "Gene Matrix (Root + 3 Allies)",
-      rankP0: "Patient Zero (Root)",
+      rankP0: "Patient Zero (Master Origin)",
       rankSub: "Vector Node",
       slot0: "Your Codon",
       slotAlly: "Ally",
@@ -249,6 +272,13 @@
       statusAlive: "Active / Stable",
       statusDead: "Clinical Extinction",
       statusVictorious: "Immortal (Cured)",
+      godTitle: "👑 ARCHITECT CONSOLE // Master Sovereign Mode",
+      godDesc: "You are the genesis origin and immune to decay. Modulate equilibrium and test your strain:",
+      godMint: "🧪 Mint & Inject Synthetic Codon",
+      godSim: "🌐 Simulate Vector Branch (+1)",
+      godRefill: "⚡ Lock Immortal State (100%)",
+      godClear: "🔄 Reset Codons (Test Bed)",
+      godBypass: "👑 Instant Quarantine Override (God Mode)",
       shareHeader: "Dual Handshake Capsule",
       shareDesc: "Generate signed token containing your full lineage chain:",
       matrixDesc: "Offline Visual Matrix (No Internet Required)",
@@ -282,7 +312,7 @@
   };
 
   /* ==========================================================================
-     نواة التشفير والأمان الرياضي المستقلة
+     النواة المشفرة المحصنة
      ========================================================================== */
 
   const GENESIS_CONFIG = {
@@ -311,7 +341,7 @@
   const SecureStorage = {
     get() {
       try {
-        const raw = localStorage.getItem('outbreak_secure_v3');
+        const raw = localStorage.getItem('outbreak_secure_v4');
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         const expectedChecksum = generateSecureSignature(JSON.stringify(parsed.state));
@@ -322,11 +352,11 @@
     set(stateObj) {
       try {
         const checksum = generateSecureSignature(JSON.stringify(stateObj));
-        localStorage.setItem('outbreak_secure_v3', JSON.stringify({ state: stateObj, checksum: checksum }));
+        localStorage.setItem('outbreak_secure_v4', JSON.stringify({ state: stateObj, checksum: checksum }));
       } catch(e) {}
     },
     clear() {
-      try { localStorage.removeItem('outbreak_secure_v3'); } catch(e) {}
+      try { localStorage.removeItem('outbreak_secure_v4'); } catch(e) {}
     }
   };
 
@@ -360,6 +390,15 @@
     document.getElementById('txt-stat-network').innerText = langObj.statNetwork;
     document.getElementById('txt-stat-depth').innerText = langObj.statDepth;
     document.getElementById('txt-stat-status').innerText = langObj.statStatus;
+    
+    document.getElementById('txt-god-title').innerText = langObj.godTitle;
+    document.getElementById('txt-god-desc').innerText = langObj.godDesc;
+    document.getElementById('btn-god-mint').innerText = langObj.godMint;
+    document.getElementById('btn-god-sim').innerText = langObj.godSim;
+    document.getElementById('btn-god-refill').innerText = langObj.godRefill;
+    document.getElementById('btn-god-clear').innerText = langObj.godClear;
+    document.getElementById('btn-god-bypass').innerText = langObj.godBypass;
+
     document.getElementById('txt-share-header').innerText = langObj.shareHeader;
     document.getElementById('txt-share-desc').innerText = langObj.shareDesc;
     document.getElementById('txt-matrix-desc').innerText = langObj.matrixDesc;
@@ -382,8 +421,6 @@
     state = SecureStorage.get();
     const urlParams = new URLSearchParams(window.location.search);
     const isGenesisBoot = urlParams.get('mode') === 'genesis';
-
-    // فحص لغة المتصفح في حال كان تشغيل جديد
     const browserLang = (navigator.language || "").toLowerCase().startsWith("ar") ? "ar" : "en";
 
     if (!state) {
@@ -429,12 +466,22 @@
     setupPhysicsEngine();
   }
 
+  /* ==========================================================================
+     الخلود البيولوجي: استثناء المريض صفر من التحلل والفناء
+     ========================================================================== */
   function syncDeltaTime() {
     const now = Date.now();
     const dt = (now - state.lastActive) / 1000;
     state.lastActive = now;
 
-    if (dt > 0 && !state.isVictorious) {
+    // المريض صفر أو الفائز بالترياق محصن ضد الفناء التلقائي
+    if (state.isPatientZero || state.isVictorious) {
+      state.immunity = 100.0;
+      SecureStorage.set(state);
+      return;
+    }
+
+    if (dt > 0) {
       const decay = dt * GENESIS_CONFIG.DECAY_PER_SEC;
       state.immunity = Math.max(0, state.immunity - decay);
       if (state.immunity <= 0) {
@@ -445,6 +492,72 @@
       SecureStorage.set(state);
     }
   }
+
+  /* ==========================================================================
+     قدرات المعماري السيادية (Architect / God Powers)
+     ========================================================================== */
+
+  function godMintCodon() {
+    if (!state.isPatientZero) return;
+    if (state.allies.length >= GENESIS_CONFIG.MAX_ALLIES) {
+      return showToast(t("toastMatrixFull"));
+    }
+    const syntheticCodon = "SYN-" + Math.floor(100 + Math.random() * 900);
+    const fakeNodeId = "NODE-SYN-" + Math.floor(10 + Math.random() * 90);
+    const gen = state.generation + 1;
+    const payloadStr = `${fakeNodeId}:${syntheticCodon}:${gen}:${state.lineage.join(',')}`;
+    const sig = generateSecureSignature(payloadStr);
+
+    ingestStrainPayload({
+      senderId: fakeNodeId,
+      codon: syntheticCodon,
+      gen: gen,
+      lineageTree: [fakeNodeId, ...state.lineage],
+      sig: sig
+    });
+    showToast(currentLang === 'ar' ? `👑 تم تخليق وحقن الحمض [${syntheticCodon}]!` : `👑 Minted synthetic codon [${syntheticCodon}]!`);
+  }
+
+  function godSimulateNode() {
+    if (!state.isPatientZero) return;
+    const dummyId = "NX-" + Math.floor(1000 + Math.random() * 9000);
+    if (!state.knownNetworkNodes.includes(dummyId)) {
+      state.knownNetworkNodes.push(dummyId);
+      SecureStorage.set(state);
+      renderApp();
+      showToast(currentLang === 'ar' ? `👑 تم محاكاة تفرع ناقل جديد [${dummyId}]` : `👑 Simulated vector branch [${dummyId}]`);
+    }
+  }
+
+  function godRefillImmunity() {
+    if (!state.isPatientZero) return;
+    state.immunity = 100.0;
+    SecureStorage.set(state);
+    renderApp();
+    showToast(currentLang === 'ar' ? "👑 تم تثبيت الحصانة المطلقة عند 100%" : "👑 Immunity locked at 100%");
+  }
+
+  function godClearAllies() {
+    if (!state.isPatientZero) return;
+    state.allies = [];
+    state.isVictorious = false;
+    SecureStorage.set(state);
+    renderApp();
+    showToast(currentLang === 'ar' ? "👑 تم تصفير مصفوفة الأحماض للاختبار" : "👑 Allies cleared for testing");
+  }
+
+  function godBypassDeath() {
+    if (!state.isPatientZero) return;
+    state.immunity = 100.0;
+    document.getElementById('death-modal').style.display = 'none';
+    SecureStorage.set(state);
+    renderApp();
+    showToast(currentLang === 'ar' ? "👑 تم تجاوز الحجر واستعادة السيادة المطلقة!" : "👑 Quarantine bypassed via Architect Sovereignty!");
+  }
+
+  /* ==========================================================================
+     محرك التحقق والمصافحة المزدوجة
+     ========================================================================== */
 
   function ingestStrainPayload(payloadObj) {
     const { senderId, codon, gen, lineageTree, sig } = payloadObj;
@@ -480,7 +593,9 @@
     }
 
     state.allies.push(codon);
-    state.immunity = Math.min(100.0, state.immunity + 30.0);
+    if (!state.isPatientZero) {
+      state.immunity = Math.min(100.0, state.immunity + 30.0);
+    }
     if (!state.lineage.includes(senderId)) state.lineage.push(senderId);
 
     if (state.allies.length === GENESIS_CONFIG.MAX_ALLIES) {
@@ -622,6 +737,8 @@
     const isP0 = state.isPatientZero;
     const titleEl = document.getElementById('ui-main-title');
     const rankEl = document.getElementById('ui-rank');
+    const godConsole = document.getElementById('god-console');
+    const godBypassBtn = document.getElementById('btn-god-bypass');
     
     if (isP0) {
       document.getElementById('card-header').classList.add('p0-card');
@@ -631,9 +748,16 @@
       rankEl.style.color = "var(--gold)";
       document.getElementById('slot-0').classList.add('root-active');
       document.getElementById('btn-share').classList.add('btn-gold');
+      
+      // فتح لوحة المعماري السيادية وأزرار التجاوز
+      godConsole.style.display = "block";
+      godBypassBtn.style.display = "block";
+      state.immunity = 100.0;
     } else {
       titleEl.innerText = t("mainTitle");
       rankEl.innerText = t("rankSub");
+      godConsole.style.display = "none";
+      godBypassBtn.style.display = "none";
     }
 
     document.getElementById('ui-node-badge').innerText = "NODE: " + state.id;
@@ -644,15 +768,15 @@
     renderOnlyMeters();
 
     const statusEl = document.getElementById('ui-status-text');
-    if (state.isVictorious) {
-      statusEl.innerText = t("statusVictorious");
+    if (state.isVictorious || isP0) {
+      statusEl.innerText = isP0 ? (currentLang === 'ar' ? "معماري خالد" : "Immortal Architect") : t("statusVictorious");
       statusEl.style.color = "var(--gold)";
     } else if (state.immunity <= 0) {
       statusEl.innerText = t("statusDead");
       statusEl.style.color = "var(--warn)";
     } else {
       statusEl.innerText = t("statusAlive");
-      statusEl.style.color = isP0 ? "var(--gold)" : "var(--accent)";
+      statusEl.style.color = "var(--accent)";
     }
 
     for (let i = 0; i < GENESIS_CONFIG.MAX_ALLIES; i++) {
